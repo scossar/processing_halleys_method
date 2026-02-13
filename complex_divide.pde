@@ -1,31 +1,27 @@
 int rows = 1000;
 int cols = rows;
-// float scale = 20;
-// float scaleAdjust;
 int[][] iterMap = new int[rows][cols];
-// Complex[][] Z = new Complex[rows][cols];
 
-double realMin = -1;
-double realMax = 1;
-double imagMin = -1;
-double imagMax = 1;
+double realMin = -5;
+double realMax = 5;
+double imagMin = -5;
+double imagMax = 5;
 
 int maxIter = 0;
-int[] cumulative;
 
 void setup() {
   size(1000, 1000);
   colorMode(HSB, 360, 100, 100);
-  // scaleAdjust = width/scale;
   double[] x = linspace(realMin, realMax, width);
   double[] y = linspace(imagMax, imagMin, height);
 
   for (int i = 0; i < width; i++) {
     for (int j = 0; j < height; j++) {
       Complex z = fromRect(x[i], y[j]);
-      double gPrev = 0; // hack
+      double prevReal = 0;
+      double prevImag = 0;
 
-      for (int k = 0; k < 100; k++) {
+      for (int k = 0; k < 50; k++) {
         Complex fz = f(z);
         Complex dfz = df(z);
         Complex ddfz = ddf(z);
@@ -35,22 +31,23 @@ void setup() {
         if (denominator.r < 1e-15) {
           break;
         }
-        Complex numerator2 = fz.mult(dfz).scalarMult(2);
-        Complex numerator = z.subtract(numerator2);
-        z = numerator.divide(denominator);
+        Complex numerator = fz.mult(dfz).scalarMult(2);
+        Complex ratio = numerator.divide(denominator);
+        z = z.subtract(ratio);
 
-        double g = Math.pow(z.r, 2);
-        if (k > 0 && Math.abs(g - gPrev) < 1e-06) {
+        double dist = Math.sqrt(Math.pow(z.real() - prevReal, 2) + Math.pow(z.imag() - prevImag, 2));
+        if (k > 0 && dist < 1e-06) {
           iterMap[i][j] = k;
           break;
         }
-        gPrev = g;
+        prevReal = z.real();
+        prevImag = z.imag();
       }
     }
   }
 
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
+  for (int i = 0; i < iterMap.length; i++) {
+    for (int j = 0; j < iterMap[i].length; j++) {
       if (iterMap[i][j] > maxIter) {
         maxIter = iterMap[i][j];
       }
@@ -63,7 +60,7 @@ void setup() {
       histogram[iterMap[i][j]]++;
     }
   }
-  cumulative = new int[maxIter + 1];
+  int[] cumulative = new int[maxIter + 1];
   cumulative[0] = histogram[0];
   for (int i = 1; i <= maxIter; i++) {
     // cumulative can be normalized by dividing by cumulative[maxIter] (last entry in array)
@@ -73,8 +70,8 @@ void setup() {
     for (int j = 0; j < height; j++) {
       int iter = iterMap[i][j];
       float normalized = (float)cumulative[iter] / cumulative[maxIter];
-      float hue = map(normalized, 0, 1, 40, 360);
-      stroke(hue, 100, 100);
+      float hue = map(normalized, 0, 1, 62, 360);
+      stroke(hue, 61, 88);
       point(i, j);
     }
   }
@@ -82,12 +79,6 @@ void setup() {
 
 void draw() {
   noLoop();
-  // translate(width/2, height/2);
-  // scale(1, -1);
-  // background(217, 2, 94);
-  // stroke(217, 90, 19);
-  // strokeWeight(4);
-  // point(0, 0);
 }
 
 Complex f(Complex z) {
@@ -130,13 +121,12 @@ class Complex {
     this.theta = theta;
   }
 
-
   Complex mult(Complex other) {
     return new Complex(r * other.r, theta + other.theta);
   }
 
   Complex divide(Complex other) {
-    if (other.r < 1e-10) {  // guessing here, not sure about this.
+    if (other.r < 1e-10) {
       return new Complex(Double.POSITIVE_INFINITY, Double.NaN);
     }
     return new Complex (r / other.r, theta - other.theta);
@@ -183,7 +173,7 @@ class Complex {
   }
 
   Complex scalarDivide(double s) {
-    if (s < 1e-10) {  // guessing here, not sure about this.
+    if (s < 1e-10) {
       return new Complex(Double.POSITIVE_INFINITY, theta);
     }
     return new Complex(r / s, theta);
