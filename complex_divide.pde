@@ -1,28 +1,34 @@
-int rows = 1000;
+int rows = 800;
 int cols = rows;
+// int cols = 1200;
 int[][] iterMap = new int[rows][cols];
 
-double realMin = -5;
-double realMax = 5;
-double imagMin = -5;
-double imagMax = 5;
+double realMin = -1;
+double realMax = 1;
+double imagMin = -1;
+double imagMax = 1;
 
 int maxIter = 0;
 
-void setup() {
-  size(1000, 1000);
-  colorMode(HSB, 360, 100, 100);
-  double[] x = linspace(realMin, realMax, width);
-  double[] y = linspace(imagMax, imagMin, height);
+double[] x;
+double[] y;
 
+void setup() {
+  size(1200, 800);
+  colorMode(HSB, 360, 100, 100);
+  // frameRate(1);
+}
+
+void draw() {
+  x = linspace(realMin, realMax, width);
+  y = linspace(imagMax, imagMin, height);
   for (int i = 0; i < width; i++) {
     for (int j = 0; j < height; j++) {
       Complex z = fromRect(x[i], y[j]);
       double prevReal = 0;
       double prevImag = 0;
-      double prevR = 0;
 
-      for (int k = 0; k < 300; k++) {
+      for (int k = 0; k < 50; k++) {
         Complex fz = f(z);
         Complex dfz = df(z);
         Complex ddfz = ddf(z);
@@ -37,14 +43,12 @@ void setup() {
         z = z.subtract(ratio);
 
         double dist = Math.sqrt(Math.pow(z.real() - prevReal, 2) + Math.pow(z.imag() - prevImag, 2));
-        // double dist = Math.abs(z.r - prevR);
         if (k > 0 && dist < 1e-06) {
           iterMap[i][j] = k;
           break;
         }
         prevReal = z.real();
         prevImag = z.imag();
-        prevR = z.r;
       }
     }
   }
@@ -78,22 +82,25 @@ void setup() {
       point(i, j);
     }
   }
-}
-
-void draw() {
   noLoop();
+  // realMin *= 0.999;
+  // realMax *= 0.999;
+  // imagMin *= 0.999;
+  // imagMax *= 0.999;
+  // println("Framecount: ", frameCount);
+  // saveFrame("frame-#####.png");
 }
 
 Complex f(Complex z) {
-  return z.power(8).sum(z.power(3)).scalarSum(100);
+  return z.power(100).subtract(z.power(4)).scalarSum(1);
 }
 
 Complex df(Complex z) {
-  return z.power(7).scalarMult(8).sum(z.power(2).scalarMult(3));
+  return z.power(99).scalarMult(100).subtract(z.power(3).scalarMult(4));
 }
 
 Complex ddf(Complex z) {
-  return z.power(6).scalarMult(56).sum(z.power(1).scalarMult(6));
+  return z.power(98).scalarMult(9900).subtract(z.power(2).scalarMult(12));
 }
 
 // Complex f(Complex z) {
