@@ -3,10 +3,10 @@ int cols = 1200; // x
 float aspectRatio = (float)cols / (float)rows;
 int[][] iterMap = new int[rows][cols];
 
-double imagSize = 2;
+double imagSize = 1.4;
 double realSize = imagSize * aspectRatio;
 double imagCenter = 0;
-double realCenter = 0;
+double realCenter = -realSize;
 
 double realMin = realCenter - 0.5 * realSize;
 double realMax = realCenter + 0.5 * realSize;
@@ -18,27 +18,43 @@ int maxIter = 0;
 double[] realSpace;
 double[] imagSpace;
 
+double[] cSpace = linspace(3.7, 3.9, 3600);
+double c;
+
+Complex f(Complex z) {
+  return z.power(c).scalarMult(4).scalarSubtract(1);
+}
+
+Complex df(Complex z) {
+  return z.power(c - 1).scalarMult(4 * c);
+}
+
+Complex ddf(Complex z) {
+  return z.power(c - 2).scalarMult(4 * c * (c - 1));
+}
+
 void setup() {
   size(1200, 800);
   colorMode(HSB, 360, 100, 100);
+  realSpace = linspace(realMin, realMax, cols);
+  imagSpace = linspace(imagMax, imagMin, rows);
 }
 
 void draw() {
-  realSpace = linspace(realMin, realMax, cols);
-  imagSpace = linspace(imagMax, imagMin, rows);
   for (int row = 0; row < rows; row++) {
     for (int col = 0; col < cols; col++) {
       Complex z = fromRect(realSpace[col], imagSpace[row]);
       double prevReal = 0;
       double prevImag = 0;
 
+      c = cSpace[frameCount % cSpace.length];
+
       for (int k = 0; k < 50; k++) {
         Complex fz = f(z);
         Complex dfz = df(z);
         Complex ddfz = ddf(z);
-        Complex denom1 = dfz.power(2).scalarMult(2);
-        Complex denom2 = fz.mult(ddfz);
-        Complex denominator = denom1.subtract(denom2);
+
+        Complex denominator = dfz.power(2).scalarMult(2).subtract(fz.mult(ddfz));
         if (denominator.r < 1e-15) {
           break;
         }
@@ -47,7 +63,7 @@ void draw() {
         z = z.subtract(ratio);
 
         double dist = Math.sqrt(Math.pow(z.real() - prevReal, 2) + Math.pow(z.imag() - prevImag, 2));
-        if (k > 0 && dist < 1e-06) {
+        if (k > 0 && dist < 1e-08) {
           iterMap[row][col] = k;
           break;
         }
@@ -87,34 +103,22 @@ void draw() {
       point(col, row); // x, y
     }
   }
-  noLoop();
-  // println("Framecount: ", frameCount);
-  // saveFrame("frame-#####.png");
-}
-
-Complex f(Complex z) {
-  return z.power(100).subtract(z.power(4)).scalarSum(1);
-}
-
-Complex df(Complex z) {
-  return z.power(99).scalarMult(100).subtract(z.power(3).scalarMult(4));
-}
-
-Complex ddf(Complex z) {
-  return z.power(98).scalarMult(9900).subtract(z.power(2).scalarMult(12));
+  println("Framecount: ", frameCount);
+  saveFrame("frame-#####.png");
 }
 
 // Complex f(Complex z) {
-//   return z.power(3).scalarSubtract(1);
+//   return z.power(100).subtract(z.power(4)).scalarSum(1);
 // }
 //
 // Complex df(Complex z) {
-//   return z.power(2).scalarMult(3);
+//   return z.power(99).scalarMult(100).subtract(z.power(3).scalarMult(4));
 // }
 //
 // Complex ddf(Complex z) {
-//   return z.scalarMult(6);
+//   return z.power(98).scalarMult(9900).subtract(z.power(2).scalarMult(12));
 // }
+
 
 double[] linspace(double start, double end, int num) {
   double[] result = new double[num];
