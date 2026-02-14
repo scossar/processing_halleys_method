@@ -1,30 +1,34 @@
-int rows = 800;
-int cols = rows;
-// int cols = 1200;
+int rows = 800; // y
+int cols = 1200; // x
+float aspectRatio = (float)cols / (float)rows;
 int[][] iterMap = new int[rows][cols];
 
-double realMin = -1;
-double realMax = 1;
-double imagMin = -1;
-double imagMax = 1;
+double imagSize = 2;
+double realSize = imagSize * aspectRatio;
+double imagCenter = 0;
+double realCenter = 0;
+
+double realMin = realCenter - 0.5 * realSize;
+double realMax = realCenter + 0.5 * realSize;
+double imagMin = imagCenter - 0.5 * imagSize;
+double imagMax = imagCenter + 0.5 * imagSize;
 
 int maxIter = 0;
 
-double[] x;
-double[] y;
+double[] realSpace;
+double[] imagSpace;
 
 void setup() {
   size(1200, 800);
   colorMode(HSB, 360, 100, 100);
-  // frameRate(1);
 }
 
 void draw() {
-  x = linspace(realMin, realMax, width);
-  y = linspace(imagMax, imagMin, height);
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
-      Complex z = fromRect(x[i], y[j]);
+  realSpace = linspace(realMin, realMax, cols);
+  imagSpace = linspace(imagMax, imagMin, rows);
+  for (int row = 0; row < rows; row++) {
+    for (int col = 0; col < cols; col++) {
+      Complex z = fromRect(realSpace[col], imagSpace[row]);
       double prevReal = 0;
       double prevImag = 0;
 
@@ -44,7 +48,7 @@ void draw() {
 
         double dist = Math.sqrt(Math.pow(z.real() - prevReal, 2) + Math.pow(z.imag() - prevImag, 2));
         if (k > 0 && dist < 1e-06) {
-          iterMap[i][j] = k;
+          iterMap[row][col] = k;
           break;
         }
         prevReal = z.real();
@@ -53,40 +57,37 @@ void draw() {
     }
   }
 
-  for (int i = 0; i < iterMap.length; i++) {
-    for (int j = 0; j < iterMap[i].length; j++) {
-      if (iterMap[i][j] > maxIter) {
-        maxIter = iterMap[i][j];
+  for (int row = 0; row < rows; row++) {
+    for (int col = 0; col < cols; col++) {
+      if (iterMap[row][col] > maxIter) {
+        maxIter = iterMap[row][col];
       }
     }
   }
 
   int[] histogram = new int[maxIter + 1];
-  for (int i = 0; i < iterMap.length; i++) {
-    for (int j = 0; j < iterMap[i].length; j++) {
-      histogram[iterMap[i][j]]++;
+  for (int row = 0; row < rows; row++) {
+    for (int col = 0; col < cols; col++) {
+      histogram[iterMap[row][col]]++;
     }
   }
+
   int[] cumulative = new int[maxIter + 1];
   cumulative[0] = histogram[0];
   for (int i = 1; i <= maxIter; i++) {
     // cumulative can be normalized by dividing by cumulative[maxIter] (last entry in array)
     cumulative[i] = cumulative[i-1] + histogram[i];
   }
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
-      int iter = iterMap[i][j];
-      float normalized = (float)cumulative[iter] / cumulative[maxIter];
+  for (int row = 0; row < rows; row++) {
+    for (int col = 0; col < cols; col++) {
+      int iterations = iterMap[row][col];
+      float normalized = (float)cumulative[iterations] / cumulative[maxIter];
       float hue = map(normalized, 0, 1, 62, 310);
       stroke(hue, 90, 76);
-      point(i, j);
+      point(col, row); // x, y
     }
   }
   noLoop();
-  // realMin *= 0.999;
-  // realMax *= 0.999;
-  // imagMin *= 0.999;
-  // imagMax *= 0.999;
   // println("Framecount: ", frameCount);
   // saveFrame("frame-#####.png");
 }
